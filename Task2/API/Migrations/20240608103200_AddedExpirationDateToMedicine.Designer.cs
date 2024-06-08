@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace OncoBound.API.Migrations
+namespace API.Migrations
 {
     [DbContext(typeof(OncoBoundDbContext))]
-    [Migration("20231126184753_FixedPrescriptionNullable")]
-    partial class FixedPrescriptionNullable
+    [Migration("20240608103200_AddedExpirationDateToMedicine")]
+    partial class AddedExpirationDateToMedicine
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace OncoBound.API.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Doctor", b =>
+            modelBuilder.Entity("API.Core.Entities.Doctor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -58,7 +58,7 @@ namespace OncoBound.API.Migrations
                     b.ToTable("Doctors");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Medication", b =>
+            modelBuilder.Entity("API.Core.Entities.Medication", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -66,7 +66,7 @@ namespace OncoBound.API.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("EndTimeUTC")
+                    b.Property<DateTime?>("EndTimeUTC")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Frequency")
@@ -78,7 +78,7 @@ namespace OncoBound.API.Migrations
                     b.Property<int>("PrescriptionId")
                         .HasColumnType("integer");
 
-                    b.Property<DateTime>("StartTimeUTC")
+                    b.Property<DateTime?>("StartTimeUTC")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
@@ -90,7 +90,7 @@ namespace OncoBound.API.Migrations
                     b.ToTable("Medications");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.MedicationLog", b =>
+            modelBuilder.Entity("API.Core.Entities.MedicationLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -108,14 +108,19 @@ namespace OncoBound.API.Migrations
                     b.Property<DateTime>("TimestampUTC")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MedicationId");
 
+                    b.HasIndex("UserId");
+
                     b.ToTable("MedicationLogs");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Medicine", b =>
+            modelBuilder.Entity("API.Core.Entities.Medicine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -126,6 +131,9 @@ namespace OncoBound.API.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTime>("ExpirationDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Interactions")
                         .IsRequired()
@@ -144,7 +152,32 @@ namespace OncoBound.API.Migrations
                     b.ToTable("Medicines");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Prescription", b =>
+            modelBuilder.Entity("API.Core.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("isRead")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("API.Core.Entities.Prescription", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -176,7 +209,7 @@ namespace OncoBound.API.Migrations
                     b.ToTable("Prescriptions");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.User", b =>
+            modelBuilder.Entity("API.Core.Entities.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -205,15 +238,15 @@ namespace OncoBound.API.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Medication", b =>
+            modelBuilder.Entity("API.Core.Entities.Medication", b =>
                 {
-                    b.HasOne("OncoBound.API.Core.Entities.Medicine", "Medicine")
+                    b.HasOne("API.Core.Entities.Medicine", "Medicine")
                         .WithMany("Medications")
                         .HasForeignKey("MedicineId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("OncoBound.API.Core.Entities.Prescription", "Prescription")
+                    b.HasOne("API.Core.Entities.Prescription", "Prescription")
                         .WithMany("Medications")
                         .HasForeignKey("PrescriptionId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -224,24 +257,43 @@ namespace OncoBound.API.Migrations
                     b.Navigation("Prescription");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.MedicationLog", b =>
+            modelBuilder.Entity("API.Core.Entities.MedicationLog", b =>
                 {
-                    b.HasOne("OncoBound.API.Core.Entities.Medication", "Medication")
+                    b.HasOne("API.Core.Entities.Medication", "Medication")
                         .WithMany("MedicationLogs")
                         .HasForeignKey("MedicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("API.Core.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Medication");
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Prescription", b =>
+            modelBuilder.Entity("API.Core.Entities.Notification", b =>
                 {
-                    b.HasOne("OncoBound.API.Core.Entities.Doctor", "Doctor")
+                    b.HasOne("API.Core.Entities.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+                });
+
+            modelBuilder.Entity("API.Core.Entities.Prescription", b =>
+                {
+                    b.HasOne("API.Core.Entities.Doctor", "Doctor")
                         .WithMany("Prescriptions")
                         .HasForeignKey("DoctorId");
 
-                    b.HasOne("OncoBound.API.Core.Entities.User", "User")
+                    b.HasOne("API.Core.Entities.User", "User")
                         .WithMany("Prescriptions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -252,27 +304,27 @@ namespace OncoBound.API.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Doctor", b =>
+            modelBuilder.Entity("API.Core.Entities.Doctor", b =>
                 {
                     b.Navigation("Prescriptions");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Medication", b =>
+            modelBuilder.Entity("API.Core.Entities.Medication", b =>
                 {
                     b.Navigation("MedicationLogs");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Medicine", b =>
+            modelBuilder.Entity("API.Core.Entities.Medicine", b =>
                 {
                     b.Navigation("Medications");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.Prescription", b =>
+            modelBuilder.Entity("API.Core.Entities.Prescription", b =>
                 {
                     b.Navigation("Medications");
                 });
 
-            modelBuilder.Entity("OncoBound.API.Core.Entities.User", b =>
+            modelBuilder.Entity("API.Core.Entities.User", b =>
                 {
                     b.Navigation("Prescriptions");
                 });

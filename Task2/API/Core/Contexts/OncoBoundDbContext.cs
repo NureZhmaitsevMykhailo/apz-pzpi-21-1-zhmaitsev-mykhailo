@@ -11,6 +11,7 @@ public class OncoBoundDbContext : DbContext
     public DbSet<Medicine> Medicines { get; set; }
     public DbSet<Medication> Medications { get; set; }
     public DbSet<MedicationLog> MedicationLogs { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
 
     public OncoBoundDbContext(DbContextOptions<OncoBoundDbContext> options)  : base(options) {}
 }

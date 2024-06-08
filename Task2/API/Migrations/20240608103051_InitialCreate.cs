@@ -4,10 +4,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace OncoBound.API.Migrations
+namespace API.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,7 +21,8 @@ namespace OncoBound.API.Migrations
                     Name = table.Column<string>(type: "text", nullable: false),
                     Specialty = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
-                    Password = table.Column<string>(type: "text", nullable: false)
+                    Password = table.Column<string>(type: "text", nullable: false),
+                    Salt = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -61,14 +62,35 @@ namespace OncoBound.API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notifications",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Message = table.Column<string>(type: "text", nullable: false),
+                    isRead = table.Column<bool>(type: "boolean", nullable: false),
+                    DoctorId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notifications_Doctors_DoctorId",
+                        column: x => x.DoctorId,
+                        principalTable: "Doctors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Prescriptions",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    DatePrescribed = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    DatePrescribedUTC = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     UserId = table.Column<int>(type: "integer", nullable: false),
-                    DoctorId = table.Column<int>(type: "integer", nullable: false),
+                    DoctorId = table.Column<int>(type: "integer", nullable: true),
                     Dosage = table.Column<int>(type: "integer", nullable: false),
                     Duration = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -79,8 +101,7 @@ namespace OncoBound.API.Migrations
                         name: "FK_Prescriptions_Doctors_DoctorId",
                         column: x => x.DoctorId,
                         principalTable: "Doctors",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Prescriptions_Users_UserId",
                         column: x => x.UserId,
@@ -98,8 +119,8 @@ namespace OncoBound.API.Migrations
                     PrescriptionId = table.Column<int>(type: "integer", nullable: false),
                     MedicineId = table.Column<int>(type: "integer", nullable: false),
                     Frequency = table.Column<int>(type: "integer", nullable: false),
-                    StartTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    StartTimeUTC = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    EndTimeUTC = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -125,7 +146,8 @@ namespace OncoBound.API.Migrations
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     MedicationId = table.Column<int>(type: "integer", nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    TimestampUTC = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -137,12 +159,23 @@ namespace OncoBound.API.Migrations
                         principalTable: "Medications",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MedicationLogs_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_MedicationLogs_MedicationId",
                 table: "MedicationLogs",
                 column: "MedicationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MedicationLogs_UserId",
+                table: "MedicationLogs",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Medications_MedicineId",
@@ -153,6 +186,11 @@ namespace OncoBound.API.Migrations
                 name: "IX_Medications_PrescriptionId",
                 table: "Medications",
                 column: "PrescriptionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notifications_DoctorId",
+                table: "Notifications",
+                column: "DoctorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Prescriptions_DoctorId",
@@ -170,6 +208,9 @@ namespace OncoBound.API.Migrations
         {
             migrationBuilder.DropTable(
                 name: "MedicationLogs");
+
+            migrationBuilder.DropTable(
+                name: "Notifications");
 
             migrationBuilder.DropTable(
                 name: "Medications");
