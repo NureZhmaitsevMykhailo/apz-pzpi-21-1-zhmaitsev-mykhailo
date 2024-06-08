@@ -102,6 +102,25 @@ public class MedicineService(OncoBoundDbContext context) : IMedicineService
         var resPrescripterMedicines = new List<PrescriptedMedicineDto>(prescriptedMedicines);
         foreach (var medicationDto in prescriptedMedicines)
         {
+            var medicine = await context.Medicines.FirstOrDefaultAsync(m => m.Id == medicationDto.MedicationId);
+            if (medicine?.ExpirationDate < DateTime.Now)
+            {
+                var doctorsWithMedicineAsPrescriptions = await context.Doctors.Include(d => d.Prescriptions)
+                    .Where(d => d.Prescriptions != null).ToListAsync();
+
+                foreach (var doctor in doctorsWithMedicineAsPrescriptions)
+                {
+                    var notification = new Notification()
+                    {
+                        DoctorId = doctor.Id,
+                        isRead = false,
+                        Message = $"The medicine ${medicine.Name} with the number ${medicine.Id} has expired. Replace the medicine or change the prescription.",
+                    };
+
+                    context.Notifications.Add(notification);
+                }
+            }
+                
             var medicationLogsCount = context.MedicationLogs
                 .Count(log => log.MedicationId == medicationDto.MedicationId
                               && log.UserId == userId
