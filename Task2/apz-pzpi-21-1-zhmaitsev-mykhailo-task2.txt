@@ -1,0 +1,276 @@
+1 МОДЕЛЮВАННЯ ПРОГРАМНОЇ СИСТЕМИ
+
+Користувачами системи «OncoBound» є 3 типи акторів: клієнт, доктор та девайс. Клієнти та доктори взаємодіють з веб-частиною, мобільним додатком, та IOT девайсом. За рахунок цього була створена UML діаграма прецедентів (див. додаток А. рис. А.1).
+За допомогою веб-додатку клієнту та доктору надаються такі можливості як авторизація та реєстрація, перегляд інформації відповідно ролі користувача, відображає для користувача робочу область з лiками, рецептами та їх даними.
+За допомогою мобільного додатку клієнтовi та доктору надається така можливiсть як взаємодія з системою на ходу, без персонального комп’ютера.
+За допомогою IoT-приладу буде відбуватися дозацiя та видача лiкiв для клієнта.
+
+2 ПРОЄКТУВАННЯ БАЗИ ДАНИХ
+
+Для проектування бази даних попередньо була розроблена ER-діаграма (див. рис. 2.1). Вона складається з 7 таблиць: користувачi (Users), доктори (Doctors), рецепти (Prescriptions), лiки (Medicines), призначення лiкiв за рецептом (Medications), логи видачi ліків (MedicationLogs), повідомлення (Notifications).
+
+У базі даних наявні наступні зв’язки між сутностями:
+–	Користувач – Рецепт (1:М, оскільки користувач може отримувати рецепти від лікарів);
+–	Лікар – Рецепт (1:М, оскільки лікар може виписувати рецепти для різних пацієнтів);
+–	Користувач – Призначення ліків (1:М, оскільки користувач може мати різні рецепти з різними призначеннями ліків);
+–	Рецепт – Призначення ліків (1:М, оскільки в одному рецепті може бути призначено декілька ліків);
+–	Лікарський засіб – Призначення ліків (1:М, оскільки один і той самий препарат може бути призначений для різних рецептів);
+–	Лікар – Повідомлення (1:М, оскільки один лікар може мати багато повідомлень);
+Програмна система використовує СКБД PostgreSQL. Для підключення до бази були прописані необхідні дані у файлі appsettings.json.
+
+3 ТЕХНОЛОГІЇ ТА АРХІТЕКТУРНІ РІШЕННЯ
+
+Для створення серверної частини системи було обрано мову програмування C# з використанням технології ASP.NET Core Web API, що дозволяє писати швидкий та ефективний код.
+Як база даних використовується PostgreSQL, до якої серверний додаток звертається за допомогою технології Entity Framework Core. Ця бібліотека дуже зручна, оскільки забезпечує взаємодію з базою даних через об'єктно-орієнтований підхід. 
+Для більш детального відображення використаних технологій було створено діаграму розгортання (див. рис. 2).
+
+Для демонстрації та тестування API застосовується інструмент OpenApi Swagger, що дозволяє зручно переглядати та тестувати API, підвищуючи якість та зручність розробки. Захист даних та конфіденційність забезпечується завдяки використанню захищеного протоколу HTTPS, який захищає дані під час передачі.
+Для хешування паролів та створення авторизаційних токенів застосовується бібліотека System.Security.Cryptography, а для генерації токенів – JWT (Json Web Tokens), що забезпечує надійний механізм управління доступом користувачів. Для обміну даними використовується принцип REST API.
+Система використовує API контролери для маршрутизації запитів. Вони розбивають програму на логічні компоненти, кожен з яких відповідає за обробку конкретних типів запитів або користувацьких дій, що спрощує управління кодом та розширення функціональності.
+Архітектура серверного застосунку представлена на діаграмі пакетів (див. додаток Б рис. Б.1).
+
+
+4 СПЕЦИФІКАЦІЯ REST
+
+REST API в даному проекті складається із 35 ендпоінтiв. Кожний ендпоінт відповідає за надання даних клієнту та виконання бізнес логіки. Специфікація кожного ендпоінту наведена у таблиці 1.
+Таблиця 1 – Специфікація REST
+Назва	Метод	Шлях
+GetDoctors	GET	/api/Doctor
+CreateDoctor	POST	/api/Doctor
+LoginDoctor	POST	/api/Doctor/login
+SignUpDoctor	POST	/api/Doctor/signup
+GetDoctorById	GET	/api/Doctor/{id}
+UpdateDoctorById	PUT	/api/Doctor/{id}
+GetMedicines	GET	/api/Medicine
+CreateMedicine	POST	/api/Medicine
+TakeMedicinesByUserId	POST	/api/Medicine/takeMedicines/{userId}
+GetMedicineById	GET	/api/Medicine/{medicineId}
+UpdateMedicineById	PUT	/api/Medicine/{medicineId}
+DeleteMedicineById	DELETE	/api/Medicine/{medicineId}
+GetUsers	GET	/api/User
+CreateUser	POST	/api/User
+LoginUser	POST	/api/User/login
+SignUpUser	POST	/api/User/signup
+GetUserById	GET	/api/User/{id}
+UpdateUserById	PUT	/api/User/{id}
+DeleteUserById	DELETE	/api/User/{id}
+GetMedications	GET	/api/medication
+CreateMedication	POST	/api/medication
+GetMedicationById	GET	/api/medication/{medicineId}
+UpdateMedicationById	PUT	/api/medication/{medicineId}
+DeleteMedicationById	DELETE	/api/medication/{medicineId}
+GetNotifications	GET	/api/notification
+ReadNotificationById	POST	/api/notification/readNotification/{notificationId}
+GetNotificationById	GET	/api/notification/{notificationId}
+UpdateNotificationById	PUT	/api/notification/{notificationId}
+DeleteNotificationById	DELETE	/api/notification/{notificationId}
+CreatePrescription	POST	/api/prescription
+GetMyPrescriptions	GET	/api/prescription/my
+VerifyPrescription	POST	/api/prescription/verify
+GetPrescriptionById	GET	/api/prescription/{prescriptionId}
+UpdatePrescriptionById	PUT	/api/prescription/{prescriptionId}
+DeletePrescriptionById	DELETE	/api/prescription/{prescriptionId}
+
+ВИСНОВКИ
+
+Під час виконання лабораторної роботи було набуто навичок проєктування серверної частини програмної системи, створення сценаріїв використання, розробки діаграм розгортання та пакетів, а також проєктування бази даних. Було здійснено програмну реалізацію серверної частини системи з використанням мови програмування C#.
+
+ДОДАТОК В
+
+MedicineService.cs
+1	using API.Core.Contexts;
+2	using API.Core.DTOs.Medicine;
+3	using API.Core.DTOs.Prescription;
+4	using API.Core.Entities;
+5	using API.Services.Abstractions;
+6	using Microsoft.EntityFrameworkCore;
+7	
+8	namespace API.Services.Implementations;
+9	
+10	public class MedicineService(OncoBoundDbContext context) : IMedicineService
+11	{
+12	    public async Task<List<MedicineDto>> GetMedicinesAsync()
+13	    {
+14	        return await context.Medicines.Select(m => new MedicineDto
+15	        {
+16	            MedicineId = m.Id,
+17	            Name = m.Name,
+18	            Description = m.Description,
+19	            SideEffects = m.SideEffects,
+20	            Interactions = m.Interactions
+21	        }).ToListAsync();
+22	    }
+23	
+24	    public async Task<MedicineDto?> GetMedicineByIdAsync(int medicineId)
+25	    {
+26	        return await context.Medicines.Where(m => m.Id == medicineId)
+27	            .Select(m => new MedicineDto
+28	            {
+29	                MedicineId = m.Id,
+30	                Name = m.Name,
+31	                Description = m.Description,
+32	                SideEffects = m.SideEffects,
+33	                Interactions = m.Interactions
+34	            })
+35	            .FirstOrDefaultAsync();
+36	    }
+37	
+38	    public async Task<int> AddMedicineAsync(MedicineCreateDto medicineCreateDto)
+39	    {
+40	        var medicine = new Medicine
+41	        {
+42	            Name = medicineCreateDto.Name,
+43	            Description = medicineCreateDto.Description,
+44	            SideEffects = medicineCreateDto.SideEffects,
+45	            Interactions = medicineCreateDto.Interactions
+46	        };
+47	        
+48	        await context.Medicines.AddAsync(medicine);
+49	        await context.SaveChangesAsync();
+50	        return medicine.Id;
+51	    }
+52	
+53	    public async Task<bool> UpdateMedicineAsync(int medicineId, MedicineUpdateDto updatedMedicine)
+54	    {
+55	        var existingMedicine = await context.Medicines.FindAsync(medicineId);
+56	
+57	        if (existingMedicine == null)
+58	            return false;
+59	
+60	        existingMedicine.Name = updatedMedicine.Name;
+61	        existingMedicine.Description = updatedMedicine.Description;
+62	        existingMedicine.SideEffects = updatedMedicine.SideEffects;
+63	        existingMedicine.Interactions = updatedMedicine.Interactions;
+64	
+65	        await context.SaveChangesAsync();
+66	        return true;
+67	    }
+68	
+69	    public async Task<bool> DeleteMedicineAsync(int medicineId)
+70	    {
+71	        var medicine = await context.Medicines.FindAsync(medicineId);
+72	
+73	        if (medicine == null)
+74	            return false;
+75	
+76	        context.Medicines.Remove(medicine);
+77	        await context.SaveChangesAsync();
+78	        return true;
+79	    }
+80	
+81	    public async Task<List<PrescriptedMedicineDto>> GetPrescriptedMedicines(int userId)
+82	    {
+83	        var currentDateUTC = DateTime.UtcNow.Date;
+84	        
+85	        var prescriptedMedicines = (await context.Prescriptions
+86	                .Include(x => x.Medications)
+87	                .Where(p => p.UserId == userId && p.DatePrescribedUTC != null)
+88	                .ToListAsync())
+89	            .SelectMany(p => p.Medications
+90	                .Select(m => new PrescriptedMedicineDto(
+91	                    p.Id,
+92	                    m.MedicineId,
+93	                    p.Dosage,
+94	                    m.Frequency,
+95	                    p.Duration,
+96	                    p.DatePrescribedUTC!.Value
+97	                )))
+98	            .Where(dto => dto.Duration > 0 && dto.DatePrescribedUTC.AddDays(dto.Duration) >= currentDateUTC)
+99	            .Where(dto => dto.Frequency > 0) // Frequency validation
+100	            .ToList();
+101	
+102	        var resPrescripterMedicines = new List<PrescriptedMedicineDto>(prescriptedMedicines);
+103	        foreach (var medicationDto in prescriptedMedicines)
+104	        {
+105	            var medicine = await context.Medicines.FirstOrDefaultAsync(m => m.Id == medicationDto.MedicationId);
+106	            if (medicine?.ExpirationDate < DateTime.Now)
+107	            {
+108	                var doctorsWithMedicineAsPrescriptions = await context.Doctors.Include(d => d.Prescriptions)
+109	                    .Where(d => d.Prescriptions != null).ToListAsync();
+110	
+111	                foreach (var doctor in doctorsWithMedicineAsPrescriptions)
+112	                {
+113	                    var notification = new Notification()
+114	                    {
+115	                        DoctorId = doctor.Id,
+116	                        isRead = false,
+117	                        Message = $"The medicine ${medicine.Name} with the number ${medicine.Id} has expired.",
+118	                    };
+119	
+120	                    context.Notifications.Add(notification);
+121	                }
+122	            }
+123	                
+124	            var medicationLogsCount = context.MedicationLogs
+125	                .Count(log => log.MedicationId == medicationDto.MedicationId
+126	                              && log.UserId == userId
+127	                              && log.TimestampUTC.Date == currentDateUTC.Date);
+128	
+129	            if (medicationLogsCount >= medicationDto.Frequency)
+130	            {
+131	                // ignore in case the medication was already taken for maximum frequency
+132	                resPrescripterMedicines.Remove(medicationDto);
+133	                continue;
+134	            }
+135	            
+136	            // Log medication taken
+137	            var logEntry = new MedicationLog
+138	            {
+139	                UserId = userId,
+140	                MedicationId = medicationDto.MedicationId,
+141	                TimestampUTC = DateTime.UtcNow,
+142	                Status = "Taken"
+143	            };
+144	
+145	            context.MedicationLogs.Add(logEntry);
+146	        }
+147	
+148	        if (prescriptedMedicines.Count > 0 && resPrescripterMedicines.Count < 1)
+149	        {
+150	            // error in case medications was already taken for maximum frequency
+151	            throw new FieldAccessException();
+152	        }
+153	
+154	        await context.SaveChangesAsync();
+155	
+156	        return resPrescripterMedicines;
+157	    }
+158	}
+
+ДОДАТОК Г
+
+PasswordHelper.cs
+1	using System.Security.Cryptography;
+2	using System.Text;
+3	
+4	namespace API.Utils;
+5	
+6	public static class PasswordHelper
+7	{
+8	    public static (string hashedPassword, string salt) HashPassword(string password)
+9	    {
+10	        var saltBytes = RandomNumberGenerator.GetBytes(16);
+11	        var combinedBytes = Encoding.UTF8.GetBytes(password).Concat(saltBytes).ToArray();
+12	        
+13	        using var sha256 = SHA256.Create();
+14	        var hashedBytes = sha256.ComputeHash(combinedBytes);
+15	        var hashedPassword = Convert.ToBase64String(hashedBytes);
+16	
+17	        return (hashedPassword, Convert.ToBase64String(saltBytes));
+18	    }
+19	
+20	    public static bool IsPasswordValid(string enteredPassword, string storedPassword, string salt)
+21	    {
+22	        var enteredPasswordBytes = Encoding.UTF8.GetBytes(enteredPassword);
+23	        var saltBytes = Convert.FromBase64String(salt);
+24	        var saltedPasswordBytes = new byte[enteredPasswordBytes.Length + saltBytes.Length];
+25	        Array.Copy(enteredPasswordBytes, saltedPasswordBytes, enteredPasswordBytes.Length);
+26	        Array.Copy(saltBytes, 0, saltedPasswordBytes, enteredPasswordBytes.Length, saltBytes.Length);
+27	
+28	        using var sha256 = SHA256.Create();
+29	        var hashedBytes = sha256.ComputeHash(saltedPasswordBytes);
+30	        var enteredHash = Convert.ToBase64String(hashedBytes);
+31	            
+32	        return string.Equals(enteredHash, storedPassword);
+33	    }
+34	}
